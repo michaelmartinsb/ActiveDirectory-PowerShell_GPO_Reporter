@@ -10,10 +10,13 @@ $gpoData = @()
 foreach ($gpo in $gpos) {
     # For each GPO, create a custom object with desired properties
     $gpoDetails = [PSCustomObject]@{
-        Name        = $gpo.DisplayName
-        ID          = $gpo.Id
-        Status      = $gpo.GpoStatus
-        #// Add more fields as needed
+        Name               = $gpo.DisplayName
+        ID                 = $gpo.Id
+        Status             = $gpo.GpoStatus
+        CreationDate       = $gpo.CreationTime
+        ModificationDate   = $gpo.ModificationTime
+        WMI_Filter         = if ($gpo.WmiFilterId) { (Get-GPO -Guid $gpo.WmiFilterId).WmiFilter.Name } else { "None" }
+        # Additional detailed settings can still be added here if needed
     }
 
     # Add the details to the array
