@@ -1,38 +1,37 @@
 # Load the XML content from a file
-[xml]$gpoXml = Get-Content -Path "C:\temp\gpoAnalysis\GPOReports\xml\Global - Software Installation - Microsoft .NET SDK 6.0.418 (x64).xml"
+[xml]$gpoXml = Get-Content -Path "EnterPathHere"
 
-# Extracting key information with added detail
+# Correctly extracting information by accessing the text content of the XML elements
 $gpoName = $gpoXml.GPO.Name
-$domain = $gpoXml.GPO.Identifier.Domain
-$gpoId = $gpoXml.GPO.Identifier.Identifier
+$domain = $gpoXml.GPO.Identifier.Domain.'#text'
+$gpoId = $gpoXml.GPO.Identifier.Identifier.'#text'
 $createdTime = $gpoXml.GPO.CreatedTime
 $modifiedTime = $gpoXml.GPO.ModifiedTime
 $readTime = $gpoXml.GPO.ReadTime
 $commentsIncluded = $gpoXml.GPO.IncludeComments
-$securityDescriptor = $gpoXml.GPO.SecurityDescriptor.SDDL
-$owner = $gpoXml.GPO.SecurityDescriptor.Owner.Name
-$ownerSID = $gpoXml.GPO.SecurityDescriptor.Owner.SID
-$group = $gpoXml.GPO.SecurityDescriptor.Group.Name
-$groupSID = $gpoXml.GPO.SecurityDescriptor.Group.SID
+$securityDescriptor = $gpoXml.GPO.SecurityDescriptor.SDDL.'#text'
+$owner = $gpoXml.GPO.SecurityDescriptor.Owner.Name.'#text'
+$ownerSID = $gpoXml.GPO.SecurityDescriptor.Owner.SID.'#text'
+$group = $gpoXml.GPO.SecurityDescriptor.Group.Name.'#text'
+$groupSID = $gpoXml.GPO.SecurityDescriptor.Group.SID.'#text'
+
+# Parsing Permissions into a more readable format
 $permissions = $gpoXml.GPO.SecurityDescriptor.Permissions.TrusteePermissions | ForEach-Object {
     @{
-        "Trustee" = $_.Trustee.Name
+        "Trustee" = $_.Trustee.Name.'#text'
         "PermissionType" = $_.Type.PermissionType
         "Standard" = $_.Standard.GPOGroupedAccessEnum
         "ApplicabilityToSelf" = $_.Applicability.ToSelf
         "ApplicabilityToDescendantObjects" = $_.Applicability.ToDescendantObjects
         "ApplicabilityToDescendantContainers" = $_.Applicability.ToDescendantContainers
     }
-}
-$computerEnabled = $gpoXml.GPO.Computer.Enabled
+} | ConvertTo-Json -Compress
+
+$linkTo = $gpoXml.GPO.LinksTo.SOMName
 $scriptCommand = $gpoXml.GPO.Computer.ExtensionData.Extension.Script.Command
 $scriptType = $gpoXml.GPO.Computer.ExtensionData.Extension.Script.Type
-$userEnabled = $gpoXml.GPO.User.Enabled
-$linkTo = $gpoXml.GPO.LinksTo.SOMName
-$linkPath = $gpoXml.GPO.LinksTo.SOMPath
-$noOverride = $gpoXml.GPO.LinksTo.NoOverride
 
-# Create an object for each GPO to export to CSV
+# Create an object for each GPO to export to CSV, incorporating corrected fields
 $gpoObject = [PSCustomObject]@{
     GPOName = $gpoName
     Domain = $domain
@@ -46,18 +45,17 @@ $gpoObject = [PSCustomObject]@{
     OwnerSID = $ownerSID
     Group = $group
     GroupSID = $groupSID
-    Permissions = ($permissions | ConvertTo-Json -Compress)
-    ComputerConfigurationEnabled = $computerEnabled
+    Permissions = $permissions
+    ComputerConfigurationEnabled = $gpoXml.GPO.Computer.Enabled
     ScriptCommand = $scriptCommand
     ScriptType = $scriptType
-    UserConfigurationEnabled = $userEnabled
+    UserConfigurationEnabled = $gpoXml.GPO.User.Enabled
     LinkedTo = $linkTo
-    LinkPath = $linkPath
-    NoOverride = $noOverride
+    LinkPath = $gpoXml.GPO.LinksTo.SOMPath
+    NoOverride = $gpoXml.GPO.LinksTo.NoOverride
 }
 
-# Specify the path to export the CSV file
-$exportPath = "C:\temp\gpoAnalysis\GPOReports\GPOInformation2.csv"
+# Export to CSV. Specify the path where you want to save the CSV file
+$exportPath = "EnterPathHere\GPOInformation.csv"
 
-# Export to CSV
 $gpoObject | Export-Csv -Path $exportPath -NoTypeInformation
