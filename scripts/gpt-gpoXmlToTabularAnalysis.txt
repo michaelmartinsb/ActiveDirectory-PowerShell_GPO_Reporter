@@ -1,0 +1,1 @@
+comprehensively document (textually with GPT4 do not use code interpreter) the GPO for me in a tabular fashion based on the below raw XML with columns Section, Setting Name, Value/State/Member, Description in the table and ensure no information is shortened or cut off:
